@@ -52,6 +52,9 @@ class BaseModel(torch.nn.Module):
 
         self.dropout = nn.Dropout(p=args.dropout_rate)
 
+        self._lstm_input_sz = lstm_input_sz
+        self._hidden_state_sz = hidden_state_sz
+
     def embedding(self, state, target, action_probs, params):
 
         action_embedding_input = action_probs
@@ -116,7 +119,17 @@ class BaseModel(torch.nn.Module):
             critic_out = self.critic_linear(x)
 
         else:
-            hx, cx = self._backend.LSTMCell(
+            # hx, cx = self._backend.LSTMCell(
+            #     embedding,
+            #     prev_hidden,
+            #     params["lstm.weight_ih"],
+            #     params["lstm.weight_hh"],
+            #     params["lstm.bias_ih"],
+            #     params["lstm.bias_hh"],
+            # )
+
+            # # Change for pytorch 1.81
+            hx, cx = torch._VF.lstm_cell(
                 embedding,
                 prev_hidden,
                 params["lstm.weight_ih"],
@@ -125,8 +138,17 @@ class BaseModel(torch.nn.Module):
                 params["lstm.bias_hh"],
             )
 
-            # Change for pytorch 1.01
-            # hx, cx = nn._VF.lstm_cell(
+            # lstm_cell = nn.quantizable.LSTMCell.from_params(params["lstm.weight_ih"],
+            #                                                 params["lstm.weight_hh"],
+            #                                                 bi=params["lstm.bias_ih"],
+            #                                                 bh=params["lstm.bias_hh"])
+            # hx, cx = lstm_cell(embedding, prev_hidden)
+
+            # lstm_cell = nn.LSTMCell(self._lstm_input_sz, self._hidden_state_sz)
+            # lstm_cell(embedding, )
+
+
+            # hx, cx = nn.LSTMCell(
             #     embedding,
             #     prev_hidden,
             #     params["lstm.weight_ih"],

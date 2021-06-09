@@ -46,7 +46,7 @@ def main_eval(args, create_shared_model, init_agent):
         target = savn_val
 
     rank = 0
-    max_count = 5
+    max_count = 250
 
     func_calls = []
     for scene_type in args.scene_types:
@@ -58,8 +58,7 @@ def main_eval(args, create_shared_model, init_agent):
                        res_queue,
                        max_count,
                        scene_type)
-        for _ in range(max_count):
-            func_calls.append((target, target_args))
+        func_calls.append((target, target_args))
 
     count = 0
     end_count = 0
@@ -67,9 +66,8 @@ def main_eval(args, create_shared_model, init_agent):
     pbar = tqdm(total=max_count * len(args.scene_types))
     try:
         for target, target_args in func_calls:
-            target(*target_args)
+            target(*target_args, pbar)
             train_result = res_queue.get()
-            pbar.update(1)
             count += 1
             if "END" in train_result:
                 end_count += 1

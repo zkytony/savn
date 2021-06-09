@@ -31,6 +31,7 @@ def savn_val(
     res_queue,
     max_count,
     scene_type,
+    pbar=None
 ):
 
     glove = Glove(args.glove_file)
@@ -150,6 +151,8 @@ def savn_val(
             **reward_dict,
             **bucketed_spl,
         )
+        if pbar is not None:
+            pbar.update(1)
         print_debug("[%s]------done putting (count %d)----------------" % (scene_type, count))
 
         reset_player(player)

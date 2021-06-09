@@ -19,8 +19,8 @@ from .train_util import (
     compute_loss,
     get_params,
     compute_learned_loss,
+    print_debug
 )
-
 
 def savn_val(
     rank,
@@ -75,6 +75,7 @@ def savn_val(
     while count < max_count:
 
         count += 1
+        print_debug("[%s]------start (count %d)----------------" % (scene_type, count))
 
         start_time = time.time()
         new_episode(args, player, scenes, possible_targets, targets, glove=glove)
@@ -91,7 +92,13 @@ def savn_val(
         episode_num = 0
         num_gradients = 0
 
+        print_debug("[%s]------running (count %d)----------------" % (scene_type, count))
+
         while True:
+            print_debug("[%s]------running (No.Grad %d) (count %d)----------------" % (scene_type, num_gradients, count))
+            args.scene_type = scene_type
+            args.num_gradients = num_gradients
+            args.count = count
             total_reward = run_episode(player, args, total_reward, model_options, False)
 
             if player.done:
@@ -134,6 +141,7 @@ def savn_val(
         spl, best_path_length = compute_spl(player, player_start_state)
         bucketed_spl = get_bucketed_metrics(spl, best_path_length, player.success)
 
+        print_debug("[%s]------putting (count %d)----------------" % (scene_type, count))
         end_episode(
             player,
             res_queue,
@@ -142,8 +150,11 @@ def savn_val(
             **reward_dict,
             **bucketed_spl,
         )
+        print_debug("[%s]------done putting (count %d)----------------" % (scene_type, count))
 
         reset_player(player)
+
+    print_debug("************************* I AM HERE! " + scene_type)
 
     player.exit()
     res_queue.put({"END": True})

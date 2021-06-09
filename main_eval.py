@@ -5,6 +5,7 @@ import os
 os.environ["OMP_NUM_THREADS"] = "1"
 import torch
 import torch.multiprocessing as mp
+import queue
 
 import time
 import numpy as np
@@ -34,7 +35,7 @@ def main_eval(args, create_shared_model, init_agent):
 
     processes = []
 
-    res_queue = mp.Queue()
+    res_queue = queue.Queue()
     if args.model == "BaseModel" or args.model == "GCN":
         args.learned_loss = False
         args.num_steps = 50
@@ -45,34 +46,28 @@ def main_eval(args, create_shared_model, init_agent):
         target = savn_val
 
     rank = 0
+    max_count = 5
+
+    func_calls = []
     for scene_type in args.scene_types:
-        p = mp.Process(
-            target=target,
-            args=(
-                rank,
-                args,
-                model_to_open,
-                create_shared_model,
-                init_agent,
-                res_queue,
-                250,
-                scene_type,
-            ),
-        )
-        p.start()
-        processes.append(p)
-        time.sleep(0.1)
-        rank += 1
+        target_args = (rank,
+                       args,
+                       model_to_open,
+                       create_shared_model,
+                       init_agent,
+                       res_queue,
+                       max_count,
+                       scene_type)
+        for _ in range(max_count):
+            func_calls.append((target, target_args))
 
     count = 0
     end_count = 0
     train_scalars = ScalarMeanTracker()
-
-    proc = len(args.scene_types)
-    pbar = tqdm(total=250 * proc)
-
+    pbar = tqdm(total=max_count * len(args.scene_types))
     try:
-        while end_count < proc:
+        for target, target_args in func_calls:
+            target(*target_args)
             train_result = res_queue.get()
             pbar.update(1)
             count += 1
@@ -80,13 +75,7 @@ def main_eval(args, create_shared_model, init_agent):
                 end_count += 1
                 continue
             train_scalars.add_scalars(train_result)
-
         tracked_means = train_scalars.pop_and_reset()
-
     finally:
-        for p in processes:
-            time.sleep(0.1)
-            p.join()
-
-    with open(args.results_json, "w") as fp:
-        json.dump(tracked_means, fp, sort_keys=True, indent=4)
+        with open(args.results_json, "w") as fp:
+            json.dump(tracked_means, fp, sort_keys=True, indent=4)

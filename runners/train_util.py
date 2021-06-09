@@ -3,13 +3,24 @@ from __future__ import division
 import torch
 from torch.autograd import Variable
 
+DEBUG_SAVN = False
+def print_debug(msg):
+    if DEBUG_SAVN:
+        print(msg)
+
 
 def run_episode(player, args, total_reward, model_options, training):
     num_steps = args.num_steps
 
-    for _ in range(num_steps):
+    for i in range(num_steps):
+        print_debug("    [%s]------running (No.Grad %d) (count %d)------ step [%d] ---" % (args.scene_type, args.num_gradients, args.count, i))
+        model_options.scene_type = args.scene_type
+        model_options.num_gradients = args.num_gradients
+        model_options.count = args.count
+        model_options.step = i
         player.action(model_options, training)
         total_reward = total_reward + player.reward
+        print_debug("    [%s]------running (No.Grad %d) (count %d)------ step [%d] done %s ---" % (args.scene_type, args.num_gradients, args.count, i, str(player.done)))
         if player.done:
             break
     return total_reward

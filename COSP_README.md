@@ -21,7 +21,9 @@ Using the virtualenv of cos-pomdp, set up this code of savn.
    ```
    This uses the latest (as of now) Pytorch version 1.9.0
 
-3. Test out the repo by running this command:
+3. Run `source setup.bash` to download data and pretrained models.
+
+4. Test out the repo by running this command:
 
     ```
     python main.py --eval \
@@ -38,6 +40,7 @@ Using the virtualenv of cos-pomdp, set up this code of savn.
     13%|███████▏                                              | 132/1000 [01:08<03:48,  3.79it/s]
     ```
     Interestingly, it just works on 3.3.4. Nothing needed to be done.
+    (Likely because the actual code doesn't use live Ai2thor feedback).
     Also, it is surprising to me that when this program runs,
     the Unity window of ai2thor stays static. How does he do that?
 
